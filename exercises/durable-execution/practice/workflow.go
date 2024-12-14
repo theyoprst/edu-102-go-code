@@ -8,18 +8,16 @@ import (
 )
 
 func SayHelloGoodbye(ctx workflow.Context, input TranslationWorkflowInput) (TranslationWorkflowOutput, error) {
-	// TODO define the Workflow logger here
+	logger := workflow.GetLogger(ctx)
 
-	// TODO Log, at the Info level, when the Workflow function is invoked
-	//      and be sure to include the name passed as input
+	logger.Info("SayHelloGoodbye Workflow started", "name", input.Name)
 
 	options := workflow.ActivityOptions{
 		StartToCloseTimeout: time.Second * 45,
 	}
 	ctx = workflow.WithActivityOptions(ctx, options)
 
-	// TODO Log, at the Debug level, a message about the Activity to be executed,
-	//      be sure to include the language code passed as input
+	logger.Debug("Executing activity TranslateTerm", "languageCode", input.LanguageCode, "term", "Hello")
 	helloInput := TranslationActivityInput{
 		Term:         "Hello",
 		LanguageCode: input.LanguageCode,
@@ -27,14 +25,15 @@ func SayHelloGoodbye(ctx workflow.Context, input TranslationWorkflowInput) (Tran
 	var helloResult TranslationActivityOutput
 	err := workflow.ExecuteActivity(ctx, TranslateTerm, helloInput).Get(ctx, &helloResult)
 	if err != nil {
+		logger.Error("Failed to translate Hello", "error", err)
 		return TranslationWorkflowOutput{}, err
 	}
 	helloMessage := fmt.Sprintf("%s, %s", helloResult.Translation, input.Name)
 
-	// TODO: (Part C): log a message at the Debug level and then start a Timer for 10 seconds
+	logger.Debug("Sleeping 10 seconds")
+	workflow.Sleep(ctx, 10*time.Second)
 
-	// TODO Log, at the Debug level, a message about the Activity to be executed,
-	//      be sure to include the language code passed as input
+	logger.Debug("Executing activity TranslateTerm", "languageCode", input.LanguageCode, "term", "Goodbye")
 	goodbyeInput := TranslationActivityInput{
 		Term:         "Goodbye",
 		LanguageCode: input.LanguageCode,
@@ -42,6 +41,7 @@ func SayHelloGoodbye(ctx workflow.Context, input TranslationWorkflowInput) (Tran
 	var goodbyeResult TranslationActivityOutput
 	err = workflow.ExecuteActivity(ctx, TranslateTerm, goodbyeInput).Get(ctx, &goodbyeResult)
 	if err != nil {
+		logger.Error("Failed to translate Goodbye", "error", err)
 		return TranslationWorkflowOutput{}, err
 	}
 	goodbyeMessage := fmt.Sprintf("%s, %s", goodbyeResult.Translation, input.Name)
