@@ -4,19 +4,27 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"go.temporal.io/sdk/testsuite"
 )
 
-func TestSuccessfulCompleteFrenchTranslation(t *testing.T) {
+func TestSuccessfulTranslationWithMocks(t *testing.T) {
 	s := testsuite.WorkflowTestSuite{}
 
 	env := s.NewTestWorkflowEnvironment()
-	env.RegisterActivity(TranslateTerm)
 
 	workflowInput := TranslationWorkflowInput{
 		Name:         "Pierre",
 		LanguageCode: "fr",
 	}
+
+	helloInput := TranslationActivityInput{Term: "Hello", LanguageCode: "fr"}
+	helloOutput := TranslationActivityOutput{Translation: "Bonjour"}
+	env.OnActivity(TranslateTerm, mock.Anything, helloInput).Return(helloOutput, nil)
+
+	goodbyeInput := TranslationActivityInput{Term: "Goodbye", LanguageCode: "fr"}
+	goodgyeOutput := TranslationActivityOutput{Translation: "Au revoir"}
+	env.OnActivity(TranslateTerm, mock.Anything, goodbyeInput).Return(goodgyeOutput, nil)
 
 	env.ExecuteWorkflow(SayHelloGoodbye, workflowInput)
 
